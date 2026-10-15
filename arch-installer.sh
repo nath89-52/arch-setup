@@ -17,35 +17,48 @@ DOTFILES=(
 )
 
 # Apps
-# Format : "Catégorie|Nom affiché|source (pacman/aur/flatpak)|nom du paquet"
+# Format : "Catégorie|Nom affiché|source (pacman/aur/flatpak)|nom du paquet|description"
+# La description s'affiche en bas de l'écran quand tu survoles l'app.
 APPS=(
-  "Navigateurs|Firefox|pacman|firefox"
-  "Navigateurs|Chromium|pacman|chromium"
-  "Navigateurs|Zen Browser|aur|zen-browser-bin"
-  "Navigateurs|Brave|aur|brave-bin"
+  "Navigateurs|Firefox|pacman|firefox|Navigateur web open source, rapide et respectueux de la vie privée"
+  "Navigateurs|Chromium|pacman|chromium|Version open source de Chrome, très compatible avec les sites web"
+  "Navigateurs|Zen Browser|aur|zen-browser-bin|Navigateur basé sur Firefox, orienté design moderne et productivité"
+  "Navigateurs|Brave|aur|brave-bin|Navigateur basé sur Chromium avec bloqueur de pubs intégré"
 
-  "Socials|Discord|pacman|discord"
-  "Socials|Vesktop (Discord + Vencord)|aur|vesktop-bin"
-  "Socials|Telegram|pacman|telegram-desktop"
-  "Socials|Signal|pacman|signal-desktop"
+  "Socials|Discord|pacman|discord|Chat vocal et textuel pour les serveurs et les potes"
+  "Socials|Vesktop (Discord + Vencord)|aur|vesktop-bin|Client Discord alternatif avec Vencord intégré (plugins, thèmes)"
+  "Socials|Telegram|pacman|telegram-desktop|Messagerie rapide avec groupes, canaux et stickers"
+  "Socials|Signal|pacman|signal-desktop|Messagerie chiffrée de bout en bout, centrée sur la vie privée"
 
-  "Média|VLC|pacman|vlc"
-  "Média|mpv|pacman|mpv"
-  "Média|OBS Studio|pacman|obs-studio"
-  "Média|GIMP|pacman|gimp"
-  "Média|Kdenlive|pacman|kdenlive"
-  "Média|Spotify|aur|spotify"
+  "Média|VLC|pacman|vlc|Lecteur vidéo et audio qui lit presque tous les formats"
+  "Média|mpv|pacman|mpv|Lecteur vidéo minimaliste et léger"
+  "Media|viewnior|pacman|viewnior|Visionneur d'images rapide et élégant"
+  "Média|OBS Studio|pacman|obs-studio|Enregistrement d'écran et streaming en direct"
+  "Média|GPU Screen Recorder|flatpak|com.dec05eba.gpu_screen_recorder|Enregistrement d'écran léger qui utilise le GPU, idéal pour les clips de jeu (Nvidia shadowplay)"
+  "Média|GIMP|pacman|gimp|Retouche d'images, l'alternative libre à Photoshop"
+  "Média|Kdenlive|pacman|kdenlive|Logiciel de montage vidéo complet"
+  "Média|Spotify|aur|spotify|Streaming musical (client officiel)"
+  "Média|Sonora|aur|sonora-bin|Spotify (besoin de premium); apple music; youtube music; subsonic et deezer dans 1 seul app codee en rust"
 
-  "Jeux|Steam|pacman|steam"
-  "Jeux|Lutris|pacman|lutris"
-  "Jeux|Heroic Games Launcher|aur|heroic-games-launcher-bin"
-  "Jeux|Prism Launcher (Minecraft)|pacman|prismlauncher"
+  "Jeux|Steam|pacman|steam|Plateforme de jeux (active le dépôt multilib automatiquement)"
+  "Jeux|Lutris|pacman|lutris|Gestionnaire de jeux pour Wine, émulateurs et autres launchers"
+  "Jeux|Heroic Games Launcher|aur|heroic-games-launcher-bin|Launcher pour les jeux Epic Games, GOG et Amazon"
+  "Jeux|Prism Launcher (Minecraft)|pacman|prismlauncher|Launcher Minecraft avec gestion de plusieurs instances et mods"
+  "Jeux|Sober|flatpak|sober|Port de la version mobile de roblox"
 
-  "Productivité|LibreOffice|pacman|libreoffice-fresh"
-  "Productivité|Obsidian|pacman|obsidian"
-  "Productivité|VS Code|aur|visual-studio-code-bin"
-  "Productivité|Neovim|pacman|neovim"
-  "Productivité|Bitwarden|pacman|bitwarden"
+  "Productivité|LibreOffice|pacman|libreoffice-fresh|Suite bureautique : texte, tableur, présentations"
+  "Productivité|Obsidian|pacman|obsidian|Prise de notes en Markdown avec liens entre les notes"
+  "Productivité|VS Code|aur|visual-studio-code-bin|Éditeur de code populaire avec des milliers d'extensions"
+  "Productivité|Neovim|pacman|neovim|Éditeur de texte en terminal, ultra configurable"
+  "Productivité|Bitwarden|pacman|bitwarden|Gestionnaire de mots de passe"
+
+  "Outils|DiskTree|aur|disktree-bin|"
+  "Outils|htop|pacman|htop|Gestionaire de taches dans le terminal (+ sobre)"
+  "Outils|btop|pacman|btop|Gestionaire de taches dans le terminal (+ moderne)"
+  "Outils|unzip|pacman|unzip|Permet de unzip des fichiers"
+  "Outils|Gearlever|flatpak|it.mijorus.gearlever|Permet de gere automatiquement les app images"
+  "Outils|HandBrake|flatpak|fr.handbrake.ghb|Convertisseur vidéo : change le format et réduit la taille de tes vidéos"
+  
 )
 
 # ============================================================
@@ -75,9 +88,9 @@ if [[ $EUID -eq 0 ]]; then
   exit 1
 fi
 
-if ! command -v whiptail &>/dev/null; then
-  log "Installation de whiptail (libnewt)"
-  sudo pacman -S --noconfirm --needed libnewt || exit 1
+if ! command -v dialog &>/dev/null; then
+  log "Installation de dialog"
+  sudo pacman -S --noconfirm --needed dialog || exit 1
 fi
 
 count_selected() { echo "${#SELECTED[@]}"; }
@@ -93,21 +106,21 @@ menu_dotfiles() {
     label="${DOTFILES[$i]%%|*}"
     args+=("$i" "$label" "$([[ $DOTFILE_CHOICE -eq $i ]] && echo ON || echo OFF)")
   done
-  choice=$(whiptail --title "Dotfiles" --radiolist \
+  choice=$(dialog --title "Dotfiles" --radiolist \
     "Un seul choix (espace pour sélectionner, entrée pour valider)" \
     16 70 8 "${args[@]}" 3>&1 1>&2 2>&3) || return
   if [[ "$choice" == "none" ]]; then DOTFILE_CHOICE=-1; else DOTFILE_CHOICE=$choice; fi
 }
 
 menu_category() {
-  local cat="$1" args=() i name src status result
+  local cat="$1" args=() i c name src pkg desc status result
   for i in "${!APPS[@]}"; do
-    IFS='|' read -r c name src _ <<< "${APPS[$i]}"
+    IFS='|' read -r c name src pkg desc <<< "${APPS[$i]}"
     [[ "$c" != "$cat" ]] && continue
     status=OFF; [[ -n "${SELECTED[$i]:-}" ]] && status=ON
-    args+=("$i" "$name  [$src]" "$status")
+    args+=("$i" "$name  [$src]" "$status" "${desc:-Pas de description}")
   done
-  result=$(whiptail --title "$cat" --checklist \
+  result=$(dialog --title "$cat" --item-help --checklist \
     "Espace = cocher / décocher, entrée = valider" \
     20 70 12 "${args[@]}" 3>&1 1>&2 2>&3) || return
   # on retire d'abord toute la catégorie, puis on remet ce qui est coché
@@ -129,7 +142,7 @@ menu_programmes() {
       args+=("$cat" "($n sélectionné(s))")
     done
     args+=("retour" "Revenir au menu principal")
-    choice=$(whiptail --title "Programmes" --menu "Choisis une catégorie" \
+    choice=$(dialog --title "Programmes" --menu "Choisis une catégorie" \
       18 60 10 "${args[@]}" 3>&1 1>&2 2>&3) || return
     [[ "$choice" == "retour" ]] && return
     menu_category "$choice"
@@ -148,11 +161,11 @@ confirm_summary() {
     txt+="  (aucun)\n"
   else
     for i in $(printf '%s\n' "${!SELECTED[@]}" | sort -n); do
-      IFS='|' read -r c name src pkg <<< "${APPS[$i]}"
+      IFS='|' read -r c name src pkg _ <<< "${APPS[$i]}"
       txt+="  - $name ($src)\n"
     done
   fi
-  whiptail --title "Résumé" --yesno "$txt\nLancer l'installation ?" 24 70
+  dialog --title "Résumé" --yesno "$txt\nLancer l'installation ?" 24 70
 }
 
 main_menu() {
@@ -163,7 +176,7 @@ main_menu() {
     else
       dot_label="aucun"
     fi
-    choice=$(whiptail --title "Arch post-install" --menu "Que veux-tu installer ?" \
+    choice=$(dialog --title "Arch post-install" --menu "Que veux-tu installer ?" \
       16 70 4 \
       1 "Dotfiles : $dot_label" \
       2 "Programmes : $(count_selected) sélectionné(s)" \
@@ -201,7 +214,7 @@ run_install() {
   local PACMAN_LIST=() AUR_LIST=() FLATPAK_LIST=() i src pkg
 
   for i in $(printf '%s\n' "${!SELECTED[@]}" | sort -n); do
-    IFS='|' read -r _ _ src pkg <<< "${APPS[$i]}"
+    IFS='|' read -r _ _ src pkg _ <<< "${APPS[$i]}"
     case "$src" in
       pacman)  PACMAN_LIST+=("$pkg") ;;
       aur)     AUR_LIST+=("$pkg") ;;
