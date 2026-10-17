@@ -34,7 +34,7 @@ Au prochain lancement, le script te propose de la recharger : tout est déjà co
 
 Ouvre arch-installer.sh, tout en haut tu as deux listes à modifier.
 
-Apps : une ligne par app, au format **Catégorie|Nom affiché|source|paquet|Description**
+- Apps : une ligne par app, au format **Catégorie|Nom affiché|source|paquet|Description**
 
 Pour ajouté une nouvelle catégorie il suffi de change son nom, elle sera crée automatiquement.
 
@@ -44,7 +44,7 @@ Pour ajouté une nouvelle catégorie il suffi de change son nom, elle sera crée
 "Socials|Vesktop (Discord + Vencord)|aur|vesktop-bin|Client Discord alternatif avec Vencord intégré (plugins, thèmes)"
 "Media|OBS Studio|pacman|obs-studio|Enregistrement d'écran et streaming en direct"
 ```
-Dotfiles : Nom|URL git|dossier|commande à lancer
+- Dotfiles : Nom|URL git|dossier|commande à lancer
 
 ```bash
 "Satoxyan - expressive-pC|https://github.com/Satoxyan/dots-hyprfork.git|dots-hyprfork|./setup install"
