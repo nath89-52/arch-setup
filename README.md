@@ -8,8 +8,8 @@ Programmes triés par catégories : Navigateurs, Socials, Média, Jeux, Producti
 Gère tout seul les différentes sources : pacman, AUR (via yay) et flatpak
 Résumé avant de lancer, et si une install plante il continue avec le reste
 ## Utilisation
-Installer **git**
 ```bash
+sudo pacman -S git
 git clone https://github.com/nath89-52/arch-setup.git
 cd arch-setup
 chmod +x arch-installer.sh
