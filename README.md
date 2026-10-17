@@ -10,6 +10,8 @@ Résumé avant de lancer, et si une install plante il continue avec le reste
 ## Utilisation
 ```bash
 sudo pacman -S git
+```
+```bash
 git clone https://github.com/nath89-52/arch-setup.git
 cd arch-setup
 chmod +x arch-installer.sh
