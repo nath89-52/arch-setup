@@ -26,10 +26,13 @@ Ouvre arch-installer.sh, tout en haut tu as deux listes à modifier.
 
 Apps : une ligne par app, au format **Catégorie|Nom affiché|source|paquet|Description**
 
+Pour ajouté une nouvelle catégorie il suffi de change son nom, elle sera crée automatiquement.
+
+### Exemple
 ```bash
-"Navigateurs|Firefox|pacman|firefox"
-"Socials|Vesktop|aur|vesktop-bin"
-"Média|OBS Studio|flatpak|com.obsproject.Studio"
+"Navigateurs|Firefox|pacman|firefox|Navigateur web open source, rapide et respectueux de la vie privée"
+"Socials|Vesktop (Discord + Vencord)|aur|vesktop-bin|Client Discord alternatif avec Vencord intégré (plugins, thèmes)"
+"Media|OBS Studio|pacman|obs-studio|Enregistrement d'écran et streaming en direct"
 ```
 Dotfiles : Nom|URL git|dossier|commande à lancer
 
