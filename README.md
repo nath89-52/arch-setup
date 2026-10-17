@@ -24,7 +24,7 @@ chmod +x arch-installer.sh
 
 Ouvre arch-installer.sh, tout en haut tu as deux listes à modifier.
 
-Apps : une ligne par app, au format **Catégorie|Nom affiché|source|paquet**
+Apps : une ligne par app, au format **Catégorie|Nom affiché|source|paquet|Description**
 
 ```bash
 "Navigateurs|Firefox|pacman|firefox"
