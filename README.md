@@ -2,11 +2,14 @@
 Un petit installateur en TUI pour Arch Linux : tu réinstalles ta machine, tu lances le script, tu coches ce que tu veux, et il s'occupe du reste.
 
 ## Ce que ça fait
-Menu interactif dans le terminal (whiptail), flèches + espace + entrée
-Dotfiles : choix d'un setup Hyprland (par défaut Satoxyan - expressive-pC)
-Programmes triés par catégories : Navigateurs, Socials, Média, Jeux, Productivité
-Gère tout seul les différentes sources : pacman, AUR (via yay) et flatpak
-Résumé avant de lancer, et si une install plante il continue avec le reste
+
+- Menu interactif dans le terminal (dialog), flèches + espace + entrée
+- Dotfiles : choix d'un setup Hyprland (par défaut none)
+- Programmes triés par catégories : Navigateurs, Socials, Média, Jeux, Productivité...
+- Gère tout seul les différentes sources : pacman, AUR (via yay) et flatpak
+- Résumé avant de lancer, et si une install plante il continue avec le reste
+- Sauvegarde ta sélection dans `selection.conf` et te propose de la recharger au prochain lancement (doit etre dans le meme dossier)
+
 ## Utilisation
 ```bash
 sudo pacman -S git
@@ -17,8 +20,15 @@ cd arch-setup
 chmod +x arch-installer.sh
 ./arch-installer.sh
 ```
-
 ## ⚠️ À lancer en utilisateur normal, pas en root (sudo sera demandé quand il faut).
+
+## Sauvegarder ta sélection
+
+Ta sélection est enregistrée dans un fichier `selection.conf`, à côté du script :
+- automatiquement quand tu lances l'installation
+- ou à la main avec **"Sauvegarder la sélection"** dans le menu principal
+
+Au prochain lancement, le script te propose de la recharger : tout est déjà coché, tu n'as plus qu'à valider.
 
 ## Ajouter tes propres apps
 
