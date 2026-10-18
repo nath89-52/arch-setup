@@ -1,4 +1,4 @@
-# Arch-post-install-setup
+# Arch-setup
 Un petit installateur en TUI pour Arch Linux : tu réinstalles ta machine, tu lances le script, tu coches ce que tu veux, et il s'occupe du reste.
 
 ## Ce que ça fait
@@ -6,14 +6,17 @@ Un petit installateur en TUI pour Arch Linux : tu réinstalles ta machine, tu la
 - Menu interactif dans le terminal (dialog), flèches + espace + entrée
 - Dotfiles : choix d'un setup Hyprland (par défaut none)
 - Programmes triés par catégories : Navigateurs, Socials, Média, Jeux, Productivité...
+- Barre de recherche : trouve une app par son nom, sa description ou sa catégorie (sans se soucier des accents ni des majuscules)
 - Gère tout seul les différentes sources : pacman, AUR (via yay) et flatpak
 - Résumé avant de lancer, et si une install plante il continue avec le reste
 - Sauvegarde ta sélection dans `selection.conf` et te propose de la recharger au prochain lancement (doit etre dans le meme dossier)
 
 ## Utilisation
+Installer git
 ```bash
 sudo pacman -S git
 ```
+Copier le git et lancer le script
 ```bash
 git clone https://github.com/nath89-52/arch-setup.git
 cd arch-setup

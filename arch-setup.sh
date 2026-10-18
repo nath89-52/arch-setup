@@ -200,9 +200,57 @@ menu_category() {
   for i in $result; do SELECTED[$i]=1; done
 }
 
+# Minuscules + sans accents, pour que "video" trouve "vidéo"
+strip_accents() {
+  local s="${1,,}"
+  s=${s//à/a}; s=${s//â/a}; s=${s//ä/a}
+  s=${s//é/e}; s=${s//è/e}; s=${s//ê/e}; s=${s//ë/e}
+  s=${s//î/i}; s=${s//ï/i}
+  s=${s//ô/o}; s=${s//ö/o}
+  s=${s//ù/u}; s=${s//û/u}; s=${s//ü/u}
+  s=${s//ç/c}
+  echo "$s"
+}
+
+menu_search() {
+  local query q hay args=() i k idx c name src pkg desc status result n=0
+  query=$(dialog --title "Recherche" \
+    --inputbox "Tape un mot (nom, description ou catégorie) :" 9 60 \
+    3>&1 1>&2 2>&3) || return
+  [[ -z "${query// /}" ]] && return
+  q=$(strip_accents "$query")
+
+  for i in "${!APPS[@]}"; do
+    IFS='|' read -r c name src pkg desc <<< "${APPS[$i]}"
+    hay=$(strip_accents "$name $pkg $desc $c")
+    [[ "$hay" == *"$q"* ]] || continue
+    status=OFF; [[ -n "${SELECTED[$i]:-}" ]] && status=ON
+    args+=("$i" "$name  [$src] ($c)" "$status" "${desc:-Pas de description}")
+    n=$((n + 1))
+  done
+
+  if (( n == 0 )); then
+    dialog --title "Recherche" --msgbox "Aucun résultat pour : $query" 7 50
+    return
+  fi
+
+  result=$(dialog --title "Résultats pour \"$query\" ($n)" --item-help --checklist \
+    "Espace = cocher / décocher, entrée = valider" \
+    20 74 12 "${args[@]}" 3>&1 1>&2 2>&3) || return
+
+  # on ne modifie que les apps affichées dans les résultats
+  for ((k = 0; k < ${#args[@]}; k += 4)); do
+    idx="${args[k]}"
+    unset 'SELECTED[$idx]'
+  done
+  result=${result//\"/}
+  for i in $result; do SELECTED[$i]=1; done
+}
+
 menu_programmes() {
   while true; do
     local args=() cat n i choice
+    args+=("recherche" "Rechercher une app (nom ou description)")
     for cat in "${CATEGORIES[@]}"; do
       n=0
       for i in "${!SELECTED[@]}"; do
@@ -212,8 +260,9 @@ menu_programmes() {
     done
     args+=("retour" "Revenir au menu principal")
     choice=$(dialog --title "Programmes" --menu "Choisis une catégorie" \
-      18 60 10 "${args[@]}" 3>&1 1>&2 2>&3) || return
+      20 64 12 "${args[@]}" 3>&1 1>&2 2>&3) || return
     [[ "$choice" == "retour" ]] && return
+    if [[ "$choice" == "recherche" ]]; then menu_search; continue; fi
     menu_category "$choice"
   done
 }
