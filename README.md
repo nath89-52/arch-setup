@@ -1,5 +1,5 @@
 # Arch-setup
-Un petit installateur en TUI pour Arch Linux : tu réinstalles ta machine, tu lances le script, tu coches ce que tu veux, et il s'occupe du reste.
+Réinstaller Arch, c'est devoir réinstaller tous ses programmes un par un à chaque fois. Ce petit installateur en TUI règle ça : tu lances le script, tu coches ce que tu veux, et il s'occupe du reste.
 
 ## Ce que ça fait
 
