@@ -7,7 +7,7 @@ Réinstaller Arch, c'est devoir réinstaller tous ses programmes un par un à ch
 - Dotfiles : choix d'un setup Hyprland (par défaut aucun)
 - Programmes triés par catégories : Navigateurs, Fichiers, Socials, Média, Jeux, Productivité, Outils, Bureau, Développement...
 - Barre de recherche : trouve une app par son nom, sa description ou sa catégorie (sans se soucier des accents ni des majuscules)
-- Gère tout seul les différentes sources : pacman, AUR (via yay) et flatpak
+- Gère tout seul les différentes sources : pacman, AUR (via yay), flatpak et AppImage
 - Résumé avant de lancer, et si une install plante il continue avec le reste
 - Sauvegarde ta sélection et te propose de la recharger au prochain lancement (par chemin ou par lien)
 - Installe tout seul ses dépendances (Python et Textual)
@@ -80,7 +80,11 @@ Ouvre `apps.conf`, une ligne par entrée.
 
 Pour ajouter une nouvelle catégorie, il suffit d'écrire un nouveau nom : elle sera créée automatiquement.
 
-La source peut être `pacman`, `aur` ou `flatpak`.
+La source peut être `pacman`, `aur`, `flatpak` ou `appimage`.
+
+Pour une `appimage`, le champ « paquet » est un lien direct de téléchargement, ou `github:propriétaire/repo` pour prendre automatiquement la dernière version publiée sur GitHub. Au moment de l'installation, le script te demande ce que tu veux en faire :
+- **Installer complètement** : l'AppImage est rangée dans `~/Applications`, rendue exécutable, avec une entrée de menu et son icône
+- **Télécharger seulement** : le fichier est déposé dans `~/Downloads`, sans rien changer d'autre (pratique si tu préfères gérer tes AppImages avec Gear Lever)
 
 ### Exemple
 ```
@@ -88,6 +92,7 @@ Navigateurs|Firefox|pacman|firefox|Navigateur web open source, rapide et respect
 Socials|Vesktop (Discord + Vencord)|aur|vesktop-bin|Client Discord alternatif avec Vencord intégré (plugins, thèmes)
 Media|OBS Studio|pacman|obs-studio|Enregistrement d'écran et streaming en direct
 Media|GPU Screen Recorder|flatpak|com.dec05eba.gpu_screen_recorder|Enregistrement d'écran léger qui utilise le GPU
+Navigateurs|Helium|appimage|github:imputnet/helium-linux|Navigateur privé, rapide et honnête basé sur Chromium
 ```
 - Dotfiles : au format **@dotfiles|Nom|URL git|dossier|commande à lancer**
 

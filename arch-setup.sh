@@ -16,6 +16,7 @@ declare -A SELECTED=()
 DOTFILE_CHOICE=-1
 LOADED_COUNT=0
 PY=python3
+APPIMAGE_MODE="full"   # full = installer complètement, download = télécharger seulement
 PRELOAD_FILE=""
 PRELOAD_TMP=""
 
@@ -171,18 +172,116 @@ install_yay() {
   rm -rf "$tmp"
 }
 
+# Trouve le lien de téléchargement d'une AppImage.
+#  - "github:owner/repo" : cherche la dernière version publiée (sans l'API GitHub)
+#  - sinon : le lien direct est utilisé tel quel
+resolve_appimage_url() {
+  local target="$1" repo tag_url tag page arch pat path
+  if [[ "$target" != github:* ]]; then
+    echo "$target"; return 0
+  fi
+  repo="${target#github:}"
+  tag_url=$(curl -fsSL -o /dev/null -w '%{url_effective}' "https://github.com/$repo/releases/latest") || return 1
+  tag="${tag_url##*/}"
+  page=$(curl -fsSL "https://github.com/$repo/releases/expanded_assets/$tag") || return 1
+  arch=$(uname -m)
+  case "$arch" in
+    aarch64) pat='arm64|aarch64' ;;
+    *)       pat="$arch" ;;
+  esac
+  path=$(grep -o 'href="[^"]*\.AppImage"' <<< "$page" | sed 's/^href="//; s/"$//' | grep -iE "$pat" | head -1)
+  [[ -n "$path" ]] || return 1
+  echo "https://github.com$path"
+}
+
+# Demande ce qu'on fait des AppImages sélectionnées.
+ask_appimage_mode() {
+  local entry names="" choice
+  for entry in "${APPIMAGE_LIST[@]}"; do names+="${entry%%|*}, "; done
+  echo
+  echo "AppImages sélectionnées : ${names%, }"
+  echo "  1) Installer complètement : ~/Applications, exécutable + entrée de menu"
+  echo "  2) Télécharger seulement  : ~/Downloads, sans rien changer (pour Gear Lever)"
+  read -r -p "Ton choix [1/2] (Entrée = 1) : " choice || choice=""
+  case "$choice" in
+    2) APPIMAGE_MODE="download" ;;
+    *) APPIMAGE_MODE="full" ;;
+  esac
+}
+
+# Télécharge les AppImages. Selon APPIMAGE_MODE :
+#  - full     : ~/Applications, rendues exécutables, avec entrée de menu et icône
+#  - download : ~/Downloads, le fichier seul (à ouvrir avec Gear Lever par exemple)
+install_appimages() {
+  local entry name target url slug file tmp icon link dir
+  local desk="$HOME/.local/share/applications" icons="$HOME/.local/share/icons"
+  if [[ "$APPIMAGE_MODE" == "download" ]]; then dir="$HOME/Downloads"; else dir="$HOME/Applications"; fi
+  log "AppImages (${APPIMAGE_MODE}) : ${APPIMAGE_LIST[*]%%|*}"
+  mkdir -p "$dir"
+  if [[ "$APPIMAGE_MODE" == "full" ]]; then
+    sudo pacman -S --noconfirm --needed fuse2 || warn "fuse2 n'a pas pu être installé (certaines AppImages en ont besoin)"
+    mkdir -p "$desk" "$icons"
+  fi
+
+  for entry in "${APPIMAGE_LIST[@]}"; do
+    name="${entry%%|*}"; target="${entry#*|}"
+    slug=$(echo "$name" | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]\+/-/g; s/^-//; s/-$//')
+    url=$(resolve_appimage_url "$target") || { warn "$name : lien de téléchargement introuvable"; continue; }
+    if [[ "$APPIMAGE_MODE" == "download" ]]; then file="$dir/${url##*/}"; else file="$dir/$slug.AppImage"; fi
+    echo "Téléchargement de $name : $url"
+    if ! curl -fL --progress-bar "$url" -o "$file.part"; then
+      warn "$name : le téléchargement a échoué"; rm -f "$file.part"; continue
+    fi
+    mv -f "$file.part" "$file"
+
+    if [[ "$APPIMAGE_MODE" == "download" ]]; then
+      echo "  -> $file"
+      continue
+    fi
+    chmod +x "$file"
+
+    # Icône (au mieux) : on extrait .DirIcon de l'AppImage
+    icon=""
+    tmp=$(mktemp -d)
+    (cd "$tmp" && "$file" --appimage-extract '.DirIcon' &>/dev/null)
+    if [[ -L "$tmp/squashfs-root/.DirIcon" ]]; then
+      link=$(readlink "$tmp/squashfs-root/.DirIcon")
+      (cd "$tmp" && "$file" --appimage-extract "${link#./}" &>/dev/null)
+    fi
+    if [[ -f "$tmp/squashfs-root/.DirIcon" ]] && cp -L "$tmp/squashfs-root/.DirIcon" "$icons/$slug.png" 2>/dev/null; then
+      icon="$icons/$slug.png"
+    fi
+    rm -rf "$tmp"
+
+    cat > "$desk/$slug.desktop" <<EOF
+[Desktop Entry]
+Type=Application
+Name=$name
+Exec="$file" %U
+${icon:+Icon=$icon}
+Terminal=false
+Categories=Network;
+EOF
+    echo "  -> $file"
+  done
+  [[ "$APPIMAGE_MODE" == "full" ]] && { update-desktop-database "$desk" &>/dev/null || true; }
+}
+
 run_install() {
-  local PACMAN_LIST=() AUR_LIST=() FLATPAK_LIST=() i src pkg
+  local PACMAN_LIST=() AUR_LIST=() FLATPAK_LIST=() APPIMAGE_LIST=() i name src pkg
 
   for i in $(printf '%s\n' "${!SELECTED[@]}" | sort -n); do
-    IFS='|' read -r _ _ src pkg _ <<< "${APPS[$i]}"
+    IFS='|' read -r _ name src pkg _ <<< "${APPS[$i]}"
     case "$src" in
       pacman)  PACMAN_LIST+=("$pkg") ;;
       aur)     AUR_LIST+=("$pkg") ;;
       flatpak) FLATPAK_LIST+=("$pkg") ;;
+      appimage) APPIMAGE_LIST+=("$name|$pkg") ;;
       *) warn "Source inconnue '$src' pour $pkg, ignoré" ;;
     esac
   done
+
+  if (( ${#APPIMAGE_LIST[@]} > 0 )); then ask_appimage_mode; fi
 
   # Base
   log "Mise à jour du système + outils de base"
@@ -214,6 +313,11 @@ run_install() {
     sudo pacman -S --noconfirm --needed flatpak
     flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
     flatpak install -y flathub "${FLATPAK_LIST[@]}" || warn "Certains flatpaks ont échoué"
+  fi
+
+  # AppImages
+  if (( ${#APPIMAGE_LIST[@]} > 0 )); then
+    install_appimages
   fi
 
   # Dotfiles en dernier

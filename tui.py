@@ -20,7 +20,7 @@ from textual.containers import Horizontal, Vertical, VerticalScroll
 from textual.screen import ModalScreen
 from textual.widgets import Footer, Header, Input, Static, Tree
 
-SRC_STYLE = {"pacman": "cyan", "aur": "magenta", "flatpak": "yellow"}
+SRC_STYLE = {"pacman": "cyan", "aur": "magenta", "flatpak": "yellow", "appimage": "bright_red"}
 
 
 def norm(s: str) -> str:
