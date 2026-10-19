@@ -3,15 +3,24 @@ Réinstaller Arch, c'est devoir réinstaller tous ses programmes un par un à ch
 
 ## Ce que ça fait
 
-- Menu interactif dans le terminal (dialog), flèches + espace + entrée
-- Dotfiles : choix d'un setup Hyprland (par défaut none)
-- Programmes triés par catégories : Navigateurs, Socials, Média, Jeux, Productivité...
+- Interface dans le terminal (Textual) : catégories à gauche, détails de l'app à droite
+- Dotfiles : choix d'un setup Hyprland (par défaut aucun)
+- Programmes triés par catégories : Navigateurs, Fichiers, Socials, Média, Jeux, Productivité, Outils, Bureau, Développement...
 - Barre de recherche : trouve une app par son nom, sa description ou sa catégorie (sans se soucier des accents ni des majuscules)
 - Gère tout seul les différentes sources : pacman, AUR (via yay) et flatpak
 - Résumé avant de lancer, et si une install plante il continue avec le reste
-- Sauvegarde ta sélection dans `selection.conf` et te propose de la recharger au prochain lancement (doit etre dans le meme dossier)
+- Sauvegarde ta sélection et te propose de la recharger au prochain lancement (par chemin ou par lien)
+- Installe tout seul ses dépendances (Python et Textual)
 
 ## Utilisation
+
+### Sans rien télécharger
+Une seule commande suffit :
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/nath89-52/arch-setup/main/arch-setup.sh)
+```
+
+### Depuis le repo
 Installer git
 ```bash
 sudo pacman -S git
@@ -20,39 +29,65 @@ Copier le git et lancer le script
 ```bash
 git clone https://github.com/nath89-52/arch-setup.git
 cd arch-setup
-chmod +x arch-installer.sh
-./arch-installer.sh
+chmod +x arch-setup.sh
+./arch-setup.sh
 ```
 ## ⚠️ À lancer en utilisateur normal, pas en root (sudo sera demandé quand il faut).
 
+## Les touches
+
+| Touche | Action |
+|---|---|
+| ↑ ↓ | Naviguer |
+| Espace / Entrée | Cocher une app, ou déplier une catégorie |
+| `/` | Rechercher (Échap pour effacer) |
+| `s` | Sauvegarder la sélection |
+| `i` | Installer (une confirmation s'affiche avant) |
+| `q` | Quitter sans rien installer |
+
+## Les fichiers du projet
+
+- `arch-setup.sh` : le script à lancer, il prépare les dépendances puis installe ta sélection
+- `tui.py` : l'interface
+- `apps.conf` : la liste des apps et des dotfiles
+
 ## Sauvegarder ta sélection
 
-Ta sélection est enregistrée dans un fichier `selection.conf`, à côté du script :
-- automatiquement quand tu lances l'installation
-- ou à la main avec **"Sauvegarder la sélection"** dans le menu principal
+Appuie sur `s` dans l'interface pour enregistrer ta sélection dans un fichier `selection.conf` :
+- à côté du script si tu l'as lancé depuis le repo
+- dans ton dossier perso (`~/selection.conf`) si tu l'as lancé avec `curl`
 
-Au prochain lancement, le script te propose de la recharger : tout est déjà coché, tu n'as plus qu'à valider.
+Au prochain lancement, le script te demande où est ta sauvegarde : tu donnes un **chemin** ou un **lien**, et tout est déjà coché, tu n'as plus qu'à valider. Entrée pour passer cette étape.
+
+Pour la retrouver après une réinstall, mets ton `selection.conf` dans ton repo GitHub et donne son lien « raw », par exemple :
+```
+https://raw.githubusercontent.com/<ton-user>/<ton-repo>/main/selection.conf
+```
 
 ## Ajouter tes propres apps
 
-Ouvre arch-installer.sh, tout en haut tu as deux listes à modifier.
+Ouvre `apps.conf`, une ligne par entrée.
 
-- Apps : une ligne par app, au format **Catégorie|Nom affiché|source|paquet|Description**
+- Apps : au format **Catégorie|Nom affiché|source|paquet|Description**
 
-Pour ajouté une nouvelle catégorie il suffi de change son nom, elle sera crée automatiquement.
+Pour ajouter une nouvelle catégorie, il suffit d'écrire un nouveau nom : elle sera créée automatiquement.
+
+La source peut être `pacman`, `aur` ou `flatpak`.
 
 ### Exemple
-```bash
-"Navigateurs|Firefox|pacman|firefox|Navigateur web open source, rapide et respectueux de la vie privée"
-"Socials|Vesktop (Discord + Vencord)|aur|vesktop-bin|Client Discord alternatif avec Vencord intégré (plugins, thèmes)"
-"Media|OBS Studio|pacman|obs-studio|Enregistrement d'écran et streaming en direct"
 ```
-- Dotfiles : Nom|URL git|dossier|commande à lancer
+Navigateurs|Firefox|pacman|firefox|Navigateur web open source, rapide et respectueux de la vie privée
+Socials|Vesktop (Discord + Vencord)|aur|vesktop-bin|Client Discord alternatif avec Vencord intégré (plugins, thèmes)
+Media|OBS Studio|pacman|obs-studio|Enregistrement d'écran et streaming en direct
+Media|GPU Screen Recorder|flatpak|com.dec05eba.gpu_screen_recorder|Enregistrement d'écran léger qui utilise le GPU
+```
+- Dotfiles : au format **@dotfiles|Nom|URL git|dossier|commande à lancer**
 
-```bash
-"Satoxyan - expressive-pC|https://github.com/Satoxyan/dots-hyprfork.git|dots-hyprfork|./setup install"
 ```
+@dotfiles|Satoxyan - expressive-pC|https://github.com/Satoxyan/dots-hyprfork.git|dots-hyprfork|./setup install
+```
+
 ## Notes
-Si tu coches Steam, le dépôt multilib est activé automatiquement
-Les dotfiles sont installés en dernier, parce qu'ils écrasent souvent des configs
-Fait pour Arch (ou dérivés avec pacman), ça ne marchera pas ailleurs
+- Si tu coches Steam, le dépôt multilib est activé automatiquement
+- Les dotfiles sont installés en dernier, parce qu'ils écrasent souvent des configs
+- Fait pour Arch (ou dérivés avec pacman), ça ne marchera pas ailleurs

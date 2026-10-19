@@ -1,153 +1,23 @@
 #!/usr/bin/env bash
-# Installateur TUI post-install Arch Linux
-# Usage : chmod +x arch-installer.sh && ./arch-installer.sh
+# Arch Setup : installateur post-install avec interface TUI (Textual)
+#
+#   Depuis le repo :  chmod +x arch-setup.sh && ./arch-setup.sh
+#   Sans cloner :     bash <(curl -fsSL https://raw.githubusercontent.com/nath89-52/arch-setup/main/arch-setup.sh)
+#
+# Fichiers du projet : arch-setup.sh (ce script), apps.conf (ta liste d'apps), tui.py (l'interface)
 # À lancer en utilisateur normal (PAS en root).
 
 set -uo pipefail
 
-# ============================================================
-# CONFIG : modifie ces listes pour ajouter / retirer des trucs
-# ============================================================
+REPO_RAW="https://raw.githubusercontent.com/nath89-52/arch-setup/main"
 
-# Dotfiles (choix unique)
-# Format : "Nom affiché|URL git|dossier cloné|commande à lancer dedans"
-DOTFILES=(
-  "Satoxyan - expressive-pC|https://github.com/Satoxyan/dots-hyprfork.git|dots-hyprfork|./setup install"
-)
-
-# Apps
-# Format : "Catégorie|Nom affiché|source (pacman/aur/flatpak)|nom du paquet|description"
-# La description s'affiche en bas de l'écran quand tu survoles l'app.
-APPS=(
-  "Navigateurs|Firefox|pacman|firefox|Navigateur web open source, rapide et respectueux de la vie privée"
-  "Navigateurs|Librewolf|pacman|librewolf|Ce projet est une version personnalisée et indépendante de Firefox, avec pour principaux objectifs la confidentialité, la sécurité et la liberté de l'utilisateur."
-  "Navigateurs|Chromium|pacman|chromium|Version open source de Chrome, très compatible avec les sites web"
-  "Navigateurs|Zen Browser|aur|zen-browser-bin|Navigateur basé sur Firefox, orienté design moderne et productivité"
-  "Navigateurs|Brave|aur|brave-bin|Navigateur basé sur Chromium avec bloqueur de pubs intégré"
-  "Navigateurs|Vivaldi|pacman|vivaldi|Navigateur propriétaire basé sur Chromium, très personnalisable et riche en fonctionnalités"
-  "Navigateurs|Floorp|aur|floorp-bin|Navigateur basé sur Firefox, axé sur la personnalisation, la productivité et la confidentialité"
-  "Navigateurs|Falkon|pacman|falkon|Navigateur léger basé sur QtWebEngine, avec une interface simple et une bonne intégration KDE"
-  "Navigateurs|Google Chrome|aur|google-chrome|Navigateur de Google basé sur Chromium, excellente compatibilité web et synchronisation avec un compte Google"
-  "Navigateurs|Microsoft Edge|aur|microsoft-edge-stable-bin|Navigateur basé sur Chromium, intégrant les services Microsoft et des fonctions de productivité"
-  "Navigateurs|Opera|aur|opera|Navigateur basé sur Chromium avec VPN intégré au navigateur, bloqueur de publicités et barre latérale"
-  "Navigateurs|Opera GX|aur|opera-gx|Navigateur orienté gaming avec personnalisation poussée et outils de gestion des ressources"
-  "Navigateurs|Tor Browser|aur|tor-browser-bin|Navigateur basé sur Firefox qui privilégie l'anonymat en faisant transiter le trafic par le réseau Tor"
- 
-  "Fichiers|Dolphin|pacman|dolphin|Gestionnaire de fichiers avancé de KDE, avec onglets, panneaux et accès réseau"
-  "Fichiers|Thunar|pacman|thunar|Gestionnaire de fichiers léger, rapide et adapté aux environnements minimalistes"
-  "Fichiers|Yazi|pacman|yazi|Gestionnaire de fichiers en terminal avec aperçu des images et navigation rapide"
-  "Fichiers|Filelight|pacman|filelight|Visualise l'espace disque utilisé avec des graphiques circulaires"
-  "Fichiers|Baobab|pacman|baobab|Analyse l'utilisation du stockage avec une interface graphique simple"
-  "Fichiers|Ark|pacman|ark|Gestionnaire graphique d'archives pour créer et extraire des fichiers compressés"
-  "Fichiers|7-Zip|pacman|7zip|Outil de compression et d'extraction prenant en charge de nombreux formats"
-  "Fichiers|KDE Connect|pacman|kdeconnect|Connecte ton téléphone Android au PC pour partager des fichiers, recevoir des notifications et contrôler certains appareils"
-  "Fichiers|LocalSend|aur|localsend-bin|Transfert de fichiers entre appareils sur le réseau local, sans compte ni serveur cloud"
- 
-  "Socials|Discord|pacman|discord|Chat vocal et textuel pour les serveurs et les potes"
-  "Socials|Vesktop (Discord + Vencord)|aur|vesktop-bin|Client Discord alternatif avec Vencord intégré (plugins, thèmes)"
-  "Socials|Telegram|pacman|telegram-desktop|Messagerie rapide avec groupes, canaux et stickers"
-  "Socials|Signal|pacman|signal-desktop|Messagerie chiffrée de bout en bout, centrée sur la vie privée"
- 
-  "Media|VLC|pacman|vlc|Lecteur vidéo et audio qui lit presque tous les formats"
-  "Media|mpv|pacman|mpv|Lecteur vidéo minimaliste et léger"
-  "Media|viewnior|pacman|viewnior|Visionneur d'images rapide et élégant"
-  "Media|OBS Studio|pacman|obs-studio|Enregistrement d'écran et streaming en direct"
-  "Media|GPU Screen Recorder|flatpak|com.dec05eba.gpu_screen_recorder|Enregistrement d'écran léger qui utilise le GPU, idéal pour les clips de jeu (Nvidia shadowplay)"
-  "Media|GIMP|pacman|gimp|Retouche d'images, l'alternative libre à Photoshop"
-  "Media|Kdenlive|pacman|kdenlive|Logiciel de montage vidéo complet"
-  "Media|Spotify|aur|spotify|Streaming musical (client officiel)"
-  "Media|Sonora|aur|sonora-bin|Spotify (besoin de premium); apple music; youtube music; subsonic et deezer dans 1 seul app codee en rust"
-  "Media|Krita|pacman|krita|Logiciel de dessin numérique et de peinture pour illustrations"
-  "Media|Inkscape|pacman|inkscape|Création et modification de graphiques vectoriels au format SVG"
-  "Media|Darktable|pacman|darktable|Développement photo RAW et gestion des retouches non destructives"
-  "Media|RawTherapee|pacman|rawtherapee|Développement et traitement avancé des photos RAW, notamment NEF"
-  "Media|Upscayl|aur|upscayl-bin|Agrandit les images grâce à des modèles d'intelligence artificielle"
-  "Media|Audacity|pacman|audacity|Enregistrement, découpage et traitement audio"
-  "Media|Tenacity|aur|tenacity|Éditeur audio libre pour enregistrer et modifier des pistes sonores"
-  "Media|LosslessCut|aur|losslesscut-bin|Découpe des vidéos et fichiers audio sans réencodage dans les cas compatibles"
-  "Media|HandBrake|pacman|handbrake|Convertit et compresse les vidéos avec de nombreux réglages"
-  "Media|Jellyfin Media Player|aur|jellyfin-media-player|Client de lecture pour accéder à un serveur multimédia Jellyfin"
- 
-  "Jeux|Steam|pacman|steam|Plateforme de jeux (active le dépôt multilib automatiquement)"
-  "Jeux|Lutris|pacman|lutris|Gestionnaire de jeux pour Wine, émulateurs et autres launchers"
-  "Jeux|Heroic Games Launcher|aur|heroic-games-launcher-bin|Launcher pour les jeux Epic Games, GOG et Amazon"
-  "Jeux|Prism Launcher (Minecraft)|pacman|prismlauncher|Launcher Minecraft avec gestion de plusieurs instances et mods"
-  "Jeux|Sober|flatpak|sober|Port de la version mobile de roblox"
-  "Jeux|ProtonUp-Qt|aur|protonup-qt|Installe et gère des versions personnalisées de Proton-GE et de Wine-GE"
-  "Jeux|MangoHud|pacman|mangohud|Affiche les FPS, l'utilisation CPU/GPU et les frametimes en jeu"
-  "Jeux|GOverlay|pacman|goverlay|Configure graphiquement MangoHud et certaines options Vulkan"
-  "Jeux|Gamescope|pacman|gamescope|Compositeur orienté gaming permettant notamment de gérer la résolution et la mise à l'échelle"
-  "Jeux|CoreCtrl|pacman|corectrl|Contrôle graphique des performances et paramètres matériels pris en charge"
-  "Jeux|AntiMicroX|pacman|antimicrox|Associe les boutons d'une manette à des touches et commandes"
-  "Jeux|Discord RPC Maker|aur|discord-rpc-maker|Outil communautaire pour personnaliser certaines activités Rich Presence Discord"
- 
-  "Productivité|LibreOffice|pacman|libreoffice-fresh|Suite bureautique : texte, tableur, présentations"
-  "Productivité|Obsidian|pacman|obsidian|Prise de notes en Markdown avec liens entre les notes"
-  "Productivité|VS Code|aur|visual-studio-code-bin|Éditeur de code populaire avec des milliers d'extensions"
-  "Productivité|MousePad|pacman|mousepad|Editeur de text"
-  "Productivité|Neovim|pacman|neovim|Éditeur de texte en terminal, ultra configurable"
-  "Productivité|Bitwarden|pacman|bitwarden|Gestionnaire de mots de passe"
- 
-  "Outils|DiskTree|aur|disktree-bin|"
-  "Outils|htop|pacman|htop|Gestionaire de taches dans le terminal"
-  "Outils|btop|pacman|btop|Gestionaire de taches dans le terminal"
-  "Outils|unzip|pacman|unzip|Permet de unzip des fichiers"
-  "Outils|Gearlever|flatpak|it.mijorus.gearlever|Permet de gere automatiquement les app images"
-  "Outils|Mission Center|pacman|mission-center|Moniteur graphique des processus, du CPU, de la mémoire et du réseau"
-  "Outils|Glances|pacman|glances|Surveille les ressources système dans le terminal avec de nombreuses statistiques"
-  "Outils|Fastfetch|pacman|fastfetch|Affiche les informations système avec un résumé visuel dans le terminal"
-  "Outils|Dust|pacman|dust|Visualise l'espace occupé par les dossiers directement dans le terminal"
-  "Outils|Duf|pacman|duf|Affiche clairement les partitions, leur espace libre et leur occupation"
-  "Outils|ncdu|pacman|ncdu|Analyse l'espace disque et permet de naviguer dans les dossiers volumineux"
-  "Outils|btrfs-assistant|aur|btrfs-assistant|Interface graphique pour gérer les systèmes de fichiers Btrfs et leurs snapshots"
-  "Outils|GParted|pacman|gparted|Outil graphique de partitionnement et de gestion des disques"
-  "Outils|Pavucontrol|pacman|pavucontrol|Configure les entrées, sorties et volumes audio"
-  "Outils|NetworkManager Applet|pacman|network-manager-applet|Applet graphique pour gérer les connexions réseau"
-  "Outils|Overskride|aur|overskride|Interface graphique pour gérer les appareils Bluetooth sous Linux"
-  "Outils|Pacseek|aur|pacseek|Interface en terminal pour rechercher, installer et supprimer des paquets Arch"
- 
-  "Bureau|Wofi|pacman|wofi|Lanceur d'applications pour Wayland, compatible avec Hyprland"
-  "Bureau|Fuzzel|pacman|fuzzel|Lanceur d'applications Wayland minimaliste et rapide"
-  "Bureau|Waybar|pacman|waybar|Barre système personnalisable pour Wayland avec modules et indicateurs"
-  "Bureau|SwayNC|pacman|swaync|Centre de notifications et panneau de contrôle pour Wayland"
-  "Bureau|Walker|aur|walker|Lanceur d'applications extensible avec recherche et extensions"
-  "Bureau| nwg-look|pacman|nwg-look|Configure les thèmes GTK, les icônes et les curseurs sous Wayland"
-  "Bureau|qt6ct|pacman|qt6ct|Configure l'apparence des applications Qt indépendamment de KDE Plasma"
- 
-  "Développement|VSCodium|flatpak|com.vscodium.codium|Éditeur de code open source sans la distribution officielle de Microsoft"
-  "Développement|Zed|aur|zed|Éditeur de code moderne et rapide avec fonctionnalités collaboratives et IA"
-  "Développement|GitHub CLI|pacman|github-cli|Gère les dépôts, issues et pull requests GitHub depuis le terminal"
-  "Développement|GitHub Desktop|aur|github-desktop-bin|Interface graphique pour gérer les commits, branches et dépôts Git"
-  "Développement|GitKraken|aur|gitkraken|Client graphique Git avec visualisation des branches et historique"
-  "Développement|DBeaver|aur|dbeaver-bin|Interface graphique pour explorer et administrer de nombreuses bases de données"
-  "Développement|Docker|pacman|docker|Plateforme pour exécuter et gérer des applications dans des conteneurs"
-  "Développement|Docker Compose|pacman|docker-compose|Décrit et gère plusieurs conteneurs avec un fichier YAML"
-  "Développement|Python|pacman|python|Interpréteur Python pour exécuter et développer des scripts"
-  "Développement|Pytest|pacman|python-pytest|Framework de tests pour vérifier automatiquement le fonctionnement du code Python"
-  "Développement|Visual Studio Code Insiders|aur|visual-studio-code-insiders-bin|Version de développement de VS Code pour tester les nouveautés"
-  
-)
-
-# ============================================================
-# ÉTAT
-# ============================================================
-
-declare -A SELECTED=()      # index de APPS -> 1 si coché
-DOTFILE_CHOICE=-1           # index de DOTFILES, -1 = aucun
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SELECTION_FILE="$SCRIPT_DIR/selection.conf"   # sauvegarde de ta sélection
-CATEGORIES=()
-
-for entry in "${APPS[@]}"; do
-  cat="${entry%%|*}"
-  found=0
-  for c in "${CATEGORIES[@]:-}"; do [[ "$c" == "$cat" ]] && found=1; done
-  (( found == 0 )) && CATEGORIES+=("$cat")
-done
-
-# ============================================================
-# OUTILS
-# ============================================================
+declare -a APPS=() DOTFILES=()
+declare -A SELECTED=()
+DOTFILE_CHOICE=-1
+LOADED_COUNT=0
+PY=python3
+PRELOAD_FILE=""
+PRELOAD_TMP=""
 
 log() { echo -e "\n\033[1;34m==> $*\033[0m"; }
 warn() { echo -e "\033[1;33m[!] $*\033[0m"; }
@@ -157,158 +27,88 @@ if [[ $EUID -eq 0 ]]; then
   exit 1
 fi
 
-if ! command -v dialog &>/dev/null; then
-  log "Installation de dialog"
-  sudo pacman -S --noconfirm --needed dialog || exit 1
+# ============================================================
+# OÙ SONT LES FICHIERS ?
+# ============================================================
+# Lancé depuis le repo : on utilise les fichiers à côté du script.
+# Lancé via "bash <(curl ...)" : on télécharge apps.conf et tui.py.
+
+_SELF="${BASH_SOURCE[0]:-$0}"
+_DIR=""
+[[ -f "$_SELF" ]] && _DIR="$(cd "$(dirname "$_SELF")" && pwd)"
+
+fetch_project_files() {
+  command -v curl &>/dev/null || sudo pacman -Sy --noconfirm curl || exit 1
+  SRC_DIR=$(mktemp -d)
+  local f
+  for f in apps.conf tui.py; do
+    if ! curl -fsSL "$REPO_RAW/$f" -o "$SRC_DIR/$f"; then
+      echo "Impossible de télécharger $f depuis $REPO_RAW" >&2
+      exit 1
+    fi
+  done
+}
+
+if [[ -n "$_DIR" && -f "$_DIR/apps.conf" && -f "$_DIR/tui.py" ]]; then
+  SRC_DIR="$_DIR"
+else
+  fetch_project_files
 fi
 
-count_selected() { echo "${#SELECTED[@]}"; }
+# Sauvegarde de la sélection : à côté du script, sinon dans ton dossier perso
+if [[ -n "$_DIR" && -w "$_DIR" ]]; then
+  SELECTION_FILE="$_DIR/selection.conf"
+else
+  SELECTION_FILE="$HOME/selection.conf"
+fi
 
 # ============================================================
-# MENUS
+# DÉPENDANCES : Python + Textual
 # ============================================================
 
-menu_dotfiles() {
-  local args=() i label choice
-  args+=("none" "Aucun" "$([[ $DOTFILE_CHOICE -eq -1 ]] && echo ON || echo OFF)")
-  for i in "${!DOTFILES[@]}"; do
-    label="${DOTFILES[$i]%%|*}"
-    args+=("$i" "$label" "$([[ $DOTFILE_CHOICE -eq $i ]] && echo ON || echo OFF)")
-  done
-  choice=$(dialog --title "Dotfiles" --radiolist \
-    "Un seul choix (espace pour sélectionner, entrée pour valider)" \
-    16 70 8 "${args[@]}" 3>&1 1>&2 2>&3) || return
-  if [[ "$choice" == "none" ]]; then DOTFILE_CHOICE=-1; else DOTFILE_CHOICE=$choice; fi
-}
-
-menu_category() {
-  local cat="$1" args=() i c name src pkg desc status result
-  for i in "${!APPS[@]}"; do
-    IFS='|' read -r c name src pkg desc <<< "${APPS[$i]}"
-    [[ "$c" != "$cat" ]] && continue
-    status=OFF; [[ -n "${SELECTED[$i]:-}" ]] && status=ON
-    args+=("$i" "$name  [$src]" "$status" "${desc:-Pas de description}")
-  done
-  result=$(dialog --title "$cat" --item-help --checklist \
-    "Espace = cocher / décocher, entrée = valider" \
-    20 70 12 "${args[@]}" 3>&1 1>&2 2>&3) || return
-  # on retire d'abord toute la catégorie, puis on remet ce qui est coché
-  for i in "${!APPS[@]}"; do
-    [[ "${APPS[$i]%%|*}" == "$cat" ]] && unset 'SELECTED[$i]'
-  done
-  result=${result//\"/}
-  for i in $result; do SELECTED[$i]=1; done
-}
-
-# Minuscules + sans accents, pour que "video" trouve "vidéo"
-strip_accents() {
-  local s="${1,,}"
-  s=${s//à/a}; s=${s//â/a}; s=${s//ä/a}
-  s=${s//é/e}; s=${s//è/e}; s=${s//ê/e}; s=${s//ë/e}
-  s=${s//î/i}; s=${s//ï/i}
-  s=${s//ô/o}; s=${s//ö/o}
-  s=${s//ù/u}; s=${s//û/u}; s=${s//ü/u}
-  s=${s//ç/c}
-  echo "$s"
-}
-
-menu_search() {
-  local query q hay args=() i k idx c name src pkg desc status result n=0
-  query=$(dialog --title "Recherche" \
-    --inputbox "Tape un mot (nom, description ou catégorie) :" 9 60 \
-    3>&1 1>&2 2>&3) || return
-  [[ -z "${query// /}" ]] && return
-  q=$(strip_accents "$query")
-
-  for i in "${!APPS[@]}"; do
-    IFS='|' read -r c name src pkg desc <<< "${APPS[$i]}"
-    hay=$(strip_accents "$name $pkg $desc $c")
-    [[ "$hay" == *"$q"* ]] || continue
-    status=OFF; [[ -n "${SELECTED[$i]:-}" ]] && status=ON
-    args+=("$i" "$name  [$src] ($c)" "$status" "${desc:-Pas de description}")
-    n=$((n + 1))
-  done
-
-  if (( n == 0 )); then
-    dialog --title "Recherche" --msgbox "Aucun résultat pour : $query" 7 50
-    return
+ensure_textual() {
+  if python3 -c "import textual" &>/dev/null; then return 0; fi
+  log "Installation de Python et Textual (interface)"
+  if sudo pacman -Syu --noconfirm --needed python python-textual && python3 -c "import textual" &>/dev/null; then
+    return 0
   fi
-
-  result=$(dialog --title "Résultats pour \"$query\" ($n)" --item-help --checklist \
-    "Espace = cocher / décocher, entrée = valider" \
-    20 74 12 "${args[@]}" 3>&1 1>&2 2>&3) || return
-
-  # on ne modifie que les apps affichées dans les résultats
-  for ((k = 0; k < ${#args[@]}; k += 4)); do
-    idx="${args[k]}"
-    unset 'SELECTED[$idx]'
-  done
-  result=${result//\"/}
-  for i in $result; do SELECTED[$i]=1; done
+  warn "python-textual indisponible via pacman, essai avec un environnement virtuel"
+  local venv="$HOME/.cache/arch-setup/venv"
+  python3 -m venv "$venv" && "$venv/bin/pip" install -q textual || return 1
+  PY="$venv/bin/python"
 }
 
-menu_programmes() {
-  while true; do
-    local args=() cat n i choice
-    args+=("recherche" "Rechercher une app (nom ou description)")
-    for cat in "${CATEGORIES[@]}"; do
-      n=0
-      for i in "${!SELECTED[@]}"; do
-        [[ "${APPS[$i]%%|*}" == "$cat" ]] && ((n++))
-      done
-      args+=("$cat" "($n sélectionné(s))")
-    done
-    args+=("retour" "Revenir au menu principal")
-    choice=$(dialog --title "Programmes" --menu "Choisis une catégorie" \
-      20 64 12 "${args[@]}" 3>&1 1>&2 2>&3) || return
-    [[ "$choice" == "retour" ]] && return
-    if [[ "$choice" == "recherche" ]]; then menu_search; continue; fi
-    menu_category "$choice"
-  done
+# ============================================================
+# LECTURE DE apps.conf ET DES SAUVEGARDES
+# ============================================================
+
+load_conf() {
+  local line
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line=${line%$'\r'}
+    line="${line#"${line%%[![:space:]]*}"}"; line="${line%"${line##*[![:space:]]}"}"
+    [[ -z "$line" || "$line" == \#* ]] && continue
+    if [[ "$line" == @dotfiles\|* ]]; then
+      DOTFILES+=("${line#@dotfiles|}")
+    else
+      APPS+=("$line")
+    fi
+  done < "$1"
 }
 
-confirm_summary() {
-  local txt="" i
-  if (( DOTFILE_CHOICE >= 0 )); then
-    txt+="Dotfiles : ${DOTFILES[$DOTFILE_CHOICE]%%|*}\n\n"
-  else
-    txt+="Dotfiles : aucun\n\n"
-  fi
-  txt+="Programmes :\n"
-  if (( ${#SELECTED[@]} == 0 )); then
-    txt+="  (aucun)\n"
-  else
-    for i in $(printf '%s\n' "${!SELECTED[@]}" | sort -n); do
-      IFS='|' read -r c name src pkg _ <<< "${APPS[$i]}"
-      txt+="  - $name ($src)\n"
-    done
-  fi
-  dialog --title "Résumé" --yesno "$txt\nLancer l'installation ?" 24 70
-}
-
-save_selection() {
-  local i pkg
-  {
-    for i in $(printf '%s\n' "${!SELECTED[@]}" | sort -n); do
-      IFS='|' read -r _ _ _ pkg _ <<< "${APPS[$i]}"
-      echo "app:$pkg"
-    done
-    (( DOTFILE_CHOICE >= 0 )) && echo "dotfiles:${DOTFILES[$DOTFILE_CHOICE]%%|*}"
-  } > "$SELECTION_FILE"
-}
-
-load_selection() {
-  [[ -f "$SELECTION_FILE" ]] || return 0
-  dialog --title "Sélection sauvegardée" \
-    --yesno "Une sélection a été trouvée :\n$SELECTION_FILE\n\nLa recharger ?" 10 70 || return 0
-  local line kind value i pkg label
-  while IFS= read -r line; do
+# Lit un fichier de sélection et coche les apps correspondantes.
+# Le fichier n'est jamais exécuté : on compare juste les noms de paquets à ta liste.
+apply_selection_file() {
+  local file="$1" line kind value i pkg label
+  LOADED_COUNT=0
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    line=${line%$'\r'}
     kind="${line%%:*}"; value="${line#*:}"
     case "$kind" in
       app)
         for i in "${!APPS[@]}"; do
           IFS='|' read -r _ _ _ pkg _ <<< "${APPS[$i]}"
-          [[ "$pkg" == "$value" ]] && SELECTED[$i]=1
+          if [[ "$pkg" == "$value" ]]; then SELECTED[$i]=1; LOADED_COUNT=$((LOADED_COUNT + 1)); fi
         done ;;
       dotfiles)
         for i in "${!DOTFILES[@]}"; do
@@ -316,33 +116,40 @@ load_selection() {
           [[ "$label" == "$value" ]] && DOTFILE_CHOICE=$i
         done ;;
     esac
-  done < "$SELECTION_FILE"
+  done < "$file"
 }
 
-main_menu() {
-  local dot_label choice
-  while true; do
-    if (( DOTFILE_CHOICE >= 0 )); then
-      dot_label="${DOTFILES[$DOTFILE_CHOICE]%%|*}"
+# Au lancement : propose de charger une sélection sauvegardée (chemin ou lien).
+ask_preload() {
+  local default="" prompt src
+  [[ -f "$SELECTION_FILE" ]] && default="$SELECTION_FILE"
+  echo
+  if [[ -n "$default" ]]; then
+    prompt="Sélection sauvegardée ? Chemin ou lien (Entrée = $default, n = ignorer) : "
+  else
+    prompt="Sélection sauvegardée à charger ? Chemin ou lien (Entrée = ignorer) : "
+  fi
+  read -r -p "$prompt" src || return 0
+  src="${src#"${src%%[![:space:]]*}"}"; src="${src%"${src##*[![:space:]]}"}"
+  [[ "$src" == [nN] || "$src" == [nN][oO][nN] ]] && return 0
+  [[ -z "$src" ]] && src="$default"
+  [[ -z "$src" ]] && return 0
+  src="${src/#\~/$HOME}"
+
+  if [[ "$src" =~ ^https?:// ]]; then
+    command -v curl &>/dev/null || { warn "curl n'est pas installé, sauvegarde ignorée."; return 0; }
+    PRELOAD_TMP=$(mktemp)
+    if curl -fsL "$src" -o "$PRELOAD_TMP" 2>/dev/null; then
+      PRELOAD_FILE="$PRELOAD_TMP"
     else
-      dot_label="aucun"
+      warn "Impossible de télécharger : $src (sauvegarde ignorée)"
+      rm -f "$PRELOAD_TMP"; PRELOAD_TMP=""
     fi
-    choice=$(dialog --title "Arch post-install" --menu "Que veux-tu installer ?" \
-      16 70 5 \
-      1 "Dotfiles : $dot_label" \
-      2 "Programmes : $(count_selected) sélectionné(s)" \
-      3 "Lancer l'installation" \
-      4 "Sauvegarder la sélection" \
-      5 "Quitter" 3>&1 1>&2 2>&3) || exit 0
-    case "$choice" in
-      1) menu_dotfiles ;;
-      2) menu_programmes ;;
-      3) if confirm_summary; then save_selection; return; fi ;;
-      4) save_selection
-         dialog --title "Sauvegarde" --msgbox "Sélection sauvegardée dans :\n$SELECTION_FILE" 8 70 ;;
-      5) exit 0 ;;
-    esac
-  done
+  elif [[ -f "$src" ]]; then
+    PRELOAD_FILE="$src"
+  else
+    warn "Fichier introuvable : $src (sauvegarde ignorée)"
+  fi
 }
 
 # ============================================================
@@ -430,6 +237,25 @@ run_install() {
 # MAIN
 # ============================================================
 
-load_selection
-main_menu
-run_install
+main() {
+  ensure_textual || { echo "Impossible d'installer Textual." >&2; exit 1; }
+  load_conf "$SRC_DIR/apps.conf"
+  ask_preload
+
+  local result
+  result=$(mktemp -u /tmp/arch-setup-result.XXXXXX)
+  APPS_CONF="$SRC_DIR/apps.conf" SELECTION_FILE="$SELECTION_FILE" \
+    PRELOAD_FILE="$PRELOAD_FILE" RESULT_FILE="$result" \
+    "$PY" "$SRC_DIR/tui.py"
+  [[ -n "$PRELOAD_TMP" ]] && rm -f "$PRELOAD_TMP"
+
+  if [[ ! -s "$result" ]]; then
+    echo "Installation annulée."
+    exit 0
+  fi
+  apply_selection_file "$result"
+  rm -f "$result"
+  run_install
+}
+
+main
