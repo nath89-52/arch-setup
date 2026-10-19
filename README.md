@@ -14,10 +14,18 @@ Réinstaller Arch, c'est devoir réinstaller tous ses programmes un par un à ch
 
 ## Utilisation
 
-### Sans rien télécharger
-Une seule commande suffit :
+### Sans cloner le dépôt
+
+Une seule commande suffit pour lancer l'installateur directement depuis le terminal.
+
+**Bash :**
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/nath89-52/arch-setup/main/arch-setup.sh)
+```
+
+**Fish :**
+```fish
+bash (curl -fsSL https://raw.githubusercontent.com/nath89-52/arch-setup/main/arch-setup.sh | psub)
 ```
 
 ### Depuis le repo
